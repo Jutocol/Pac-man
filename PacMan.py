@@ -12,6 +12,7 @@ FPS = 60
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 0)
+RED = (255, 0, 0)
 
 # Create the game window
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -33,13 +34,42 @@ pellets = [(100, 100), (200, 100), (300, 100), (400, 100),
 # Score
 score = 0
 
+# Class for Ghosts
+class Ghost:
+    def __init__(self, x, y, speed):
+        self.rect = pygame.Rect(x, y, 30, 30)
+        self.speed = speed
+        self.direction = [0, 0]
+
+# Create Ghosts
+ghosts = [
+    Ghost(100, 200, 4),
+    Ghost(200, 200, 4),
+    Ghost(300, 200, 4),
+    Ghost(400, 200, 4)
+]
+
+# Define the maze using a 2D array
+maze = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 0, 1, 1, 0, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+    [1, 1, 1, 0, 1, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+]
+
 # Game loop
 clock = pygame.time.Clock()
 pacman_pos = [WIDTH // 2, HEIGHT // 2]
 pacman_speed = 5
 pacman_direction = [0, 0]
 
-running = True  # <-- Initialize the 'running' variable to True
+running = True
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -59,17 +89,11 @@ while running:
     pacman_pos[0] += pacman_direction[0]
     pacman_pos[1] += pacman_direction[1]
 
-    # Boundary constraints
-    if pacman_pos[0] < 0:
-        pacman_pos[0] = 0
-    elif pacman_pos[0] > WIDTH - 30:
-        pacman_pos[0] = WIDTH - 30
-    if pacman_pos[1] < 0:
-        pacman_pos[1] = 0
-    elif pacman_pos[1] > HEIGHT - 30:
-        pacman_pos[1] = HEIGHT - 30
+    # Boundary constraints for Pac-Man
+    pacman_pos[0] = max(0, min(pacman_pos[0], WIDTH - 30))
+    pacman_pos[1] = max(0, min(pacman_pos[1], HEIGHT - 30))
 
-    # Check for collisions with pellets
+    # Check for collisions with walls (maze) for Pac-Man
     pacman_rect = pygame.Rect(pacman_pos[0], pacman_pos[1], 30, 30)
     for pellet_pos in pellets[:]:
         if pacman_rect.colliderect(pygame.Rect(pellet_pos[0], pellet_pos[1], 10, 10)):
@@ -84,7 +108,25 @@ while running:
         pygame.draw.circle(screen, WHITE, pellet_pos, 5)
 
     # Draw Pac-Man
-    pacman = pygame.draw.circle(screen, YELLOW, pacman_pos, 15)
+    pacman = pygame.draw.circle(screen, YELLOW, (pacman_pos[0] + 15, pacman_pos[1] + 15), 15)
+
+    # Move and draw ghosts
+    for ghost in ghosts:
+        ghost.rect.x += ghost.direction[0]
+        ghost.rect.y += ghost.direction[1]
+
+        # Boundary constraints for ghosts
+        if ghost.rect.x < 0 or ghost.rect.x > WIDTH - 30:
+            ghost.direction[0] *= -1
+        if ghost.rect.y < 0 or ghost.rect.y > HEIGHT - 30:
+            ghost.direction[1] *= -1
+
+        # Check for collisions between Pac-Man and ghosts
+        if pacman_rect.colliderect(ghost.rect):
+            running = False  # Game Over
+
+        # Draw ghosts
+        pygame.draw.circle(screen, RED, (ghost.rect.x + 15, ghost.rect.y + 15), 15)
 
     # Display score
     display_score()
